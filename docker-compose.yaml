@@ -1,6 +1,6 @@
 services:
   tailscale:
-    image: tailscale/tailscale:latest
+    image: tailscale/tailscale:v1.92.5
     container_name: ts-searxng
     hostname: ${HOSTNAME:?Environment variable HOSTNAME must be set}
     restart: unless-stopped
@@ -23,13 +23,13 @@ services:
       - TS_USERSPACE=false
     cap_add:
       - net_admin
-    labels: [ "com.centurylinklabs.watchtower.scope=searxng" ]
 
   searxng:
     image: docker.io/searxng/searxng:latest
     container_name: searxng
     restart: unless-stopped
     depends_on:
+      - tailscale
       - valkey
     network_mode: service:tailscale
     volumes:
@@ -43,7 +43,6 @@ services:
       options:
         max-size: "1m"
         max-file: "1"
-    labels: [ "com.centurylinklabs.watchtower.scope=searxng" ]
 
   valkey:
     image: docker.io/valkey/valkey:8-alpine
@@ -59,18 +58,6 @@ services:
       options:
         max-size: "1m"
         max-file: "1"
-    labels: [ "com.centurylinklabs.watchtower.scope=searxng" ]
-
-  watchtower:
-    image: containrrr/watchtower
-    container_name: searxng-watchtower
-    command: --interval 21600 searxng --scope searxng
-    labels: [ "com.centurylinklabs.watchtower.scope=searxng" ]
-    restart: unless-stopped
-    depends_on:
-      - searxng
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
 
 networks:
   searxng:
